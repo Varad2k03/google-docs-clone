@@ -3,7 +3,6 @@ import Quill from "quill"
 import "quill/dist/quill.snow.css"
 import { io } from "socket.io-client"
 import { useParams } from "react-router-dom"
-import html2pdf from "html2pdf.js/dist/html2pdf.min"; // Import html2pdf
 
 const SAVE_INTERVAL_MS = 2000
 const TOOLBAR_OPTIONS = [
@@ -96,31 +95,5 @@ export default function TextEditor() {
     q.setText("Loading...")
     setQuill(q)
   }, [])
-
-  // Function to handle PDF download
-  const handleDownloadPDF = () => {
-    if (!quill) return
-    const content = quill.root.innerHTML // Get the HTML content from the editor
-
-    const opt = {
-      margin: 1,
-      filename: 'document.pdf',
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
-    }
-
-    // Use html2pdf to generate the PDF
-    html2pdf().from(content).set(opt).save()
-  }
-
-  return (
-    <div>
-      <div className="container" ref={wrapperRef}></div>
-      {/* Download PDF Button */}
-      <button onClick={handleDownloadPDF} className="btn btn-primary">
-        Download PDF
-      </button>
-    </div>
-  )
+  return <div className="container" ref={wrapperRef}></div>
 }
