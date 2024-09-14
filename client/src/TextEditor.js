@@ -1,15 +1,15 @@
-import html2pdf from "html2pdf.js"
-import { Document, Packer, Paragraph, TextRun } from "docx"
 import { useCallback, useEffect, useState } from "react"
 import Quill from "quill"
 import "quill/dist/quill.snow.css"
 import { io } from "socket.io-client"
 import { useParams } from "react-router-dom"
+import html2pdf from "html2pdf.js"
+import { Packer, Document, Paragraph } from "docx"
+import { saveAs } from "file-saver"
 
 const SAVE_INTERVAL_MS = 2000
-
 const TOOLBAR_OPTIONS = [
-  [{ header: [1, 2, false] }],
+  [{ header: [1, 2, 3, 4, 5, 6, false] }],
   [{ font: [] }],
   [{ list: "ordered" }, { list: "bullet" }],
   ["bold", "italic", "underline"],
@@ -18,6 +18,8 @@ const TOOLBAR_OPTIONS = [
   [{ align: [] }],
   ["image", "blockquote", "code-block"],
   ["clean"],
+  // Add placeholders for the custom buttons
+  [{ 'custom-pdf': 'PDF' }, { 'custom-docx': 'DOCX' }]
 ]
 
 export default function TextEditor() {
@@ -37,7 +39,7 @@ export default function TextEditor() {
   useEffect(() => {
     if (socket == null || quill == null) return
 
-    socket.once("load-document", document => {
+    socket.once("load-document", (document) => {
       quill.setContents(document)
       quill.enable()
     })
@@ -57,59 +59,34 @@ export default function TextEditor() {
     }
   }, [socket, quill])
 
-  const downloadPDF = () => {
-    const editorContent = document.querySelector(".ql-editor")
-    const opt = {
-      margin: 1,
-      filename: "document.pdf",
-      image: { type: "jpeg", quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF: { unit: "in", format: "letter", orientation: "portrait" },
+  useEffect(() => {
+    if (socket == null || quill == null) return
+
+    const handler = (delta) => {
+      quill.updateContents(delta)
     }
-    html2pdf().from(editorContent).set(opt).save()
-  }
+    socket.on("receive-changes", handler)
 
-  const downloadDOCX = () => {
-    const editorContent = quill.getText()
-    const doc = new Document({
-      sections: [
-        {
-          properties: {},
-          children: [new Paragraph({ children: [new TextRun(editorContent)] })],
-        },
-      ],
-    })
-
-    Packer.toBlob(doc).then(blob => {
-      const link = document.createElement("a")
-      link.href = URL.createObjectURL(blob)
-      link.download = "document.docx"
-      link.click()
-    })
-  }
+    return () => {
+      socket.off("receive-changes", handler)
+    }
+  }, [socket, quill])
 
   useEffect(() => {
-    if (quill == null) return
+    if (socket == null || quill == null) return
 
-    const toolbar = quill.getModule("toolbar")
-    const toolbarContainer = toolbar.container
+    const handler = (delta, oldDelta, source) => {
+      if (source !== "user") return
+      socket.emit("send-changes", delta)
+    }
+    quill.on("text-change", handler)
 
-    // Create and append the custom PDF button
-    const pdfButton = document.createElement("button")
-    pdfButton.innerHTML = "PDF"
-    pdfButton.onclick = downloadPDF
-    pdfButton.style.margin = "0 4px" // Ensure spacing
-    toolbarContainer.appendChild(pdfButton)
+    return () => {
+      quill.off("text-change", handler)
+    }
+  }, [socket, quill])
 
-    // Create and append the custom DOCX button
-    const docxButton = document.createElement("button")
-    docxButton.innerHTML = "DOCX"
-    docxButton.onclick = downloadDOCX
-    docxButton.style.margin = "0 4px" // Ensure spacing
-    toolbarContainer.appendChild(docxButton)
-  }, [quill])
-
-  const wrapperRef = useCallback(wrapper => {
+  const wrapperRef = useCallback((wrapper) => {
     if (wrapper == null) return
 
     wrapper.innerHTML = ""
@@ -122,7 +99,48 @@ export default function TextEditor() {
     q.disable()
     q.setText("Loading...")
     setQuill(q)
+
+    // Add event listeners for the custom buttons after Quill is initialized
+    const pdfButton = document.querySelector(".ql-custom-pdf")
+    const docxButton = document.querySelector(".ql-custom-docx")
+
+    if (pdfButton) {
+      pdfButton.addEventListener("click", downloadAsPDF)
+    }
+
+    if (docxButton) {
+      docxButton.addEventListener("click", downloadAsDocx)
+    }
   }, [])
+
+  // Function to download content as PDF
+  const downloadAsPDF = () => {
+    const content = document.querySelector(".ql-editor")
+    const opt = {
+      margin: 1,
+      filename: "document.pdf",
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: "in", format: "letter", orientation: "portrait" },
+    }
+    html2pdf().from(content).set(opt).save()
+  }
+
+  // Function to download content as DOCX
+  const downloadAsDocx = () => {
+    const content = quill.getText()
+    const doc = new Document({
+      sections: [
+        {
+          children: [new Paragraph(content)],
+        },
+      ],
+    })
+
+    Packer.toBlob(doc).then((blob) => {
+      saveAs(blob, "document.docx")
+    })
+  }
 
   return <div className="container" ref={wrapperRef}></div>
 }

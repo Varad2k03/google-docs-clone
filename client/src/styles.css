@@ -1,6 +1,4 @@
-*,
-*::before,
-*::after {
+*, *::before, *::after {
   box-sizing: border-box;
 }
 
@@ -26,10 +24,7 @@ body {
 
 .container .ql-toolbar.ql-snow {
   display: flex;
-  flex-wrap: wrap;
-  /* Allow wrapping to prevent overflow */
   justify-content: center;
-  /* Align items to the start */
   position: sticky;
   top: 0;
   z-index: 1;
@@ -38,38 +33,43 @@ body {
   box-shadow: 0 0 5px 0 rgba(0, 0, 0, .5);
 }
 
-.ql-toolbar button {
-  margin: 0 4px;
-  /* Adjust spacing between buttons */
-  padding: 6px 12px;
-  /* Add padding for better clickability */
-  border: 1px solid #ccc;
-  /* Border for buttons */
-  border-radius: 4px;
-  /* Rounded corners for a cleaner look */
-  background-color: #fff;
-  /* Background color for buttons */
-  cursor: pointer;
-  /* Pointer cursor on hover */
-}
-
-.ql-toolbar button:hover {
-  background-color: #f0f0f0;
-  /* Hover effect for buttons */
-}
-
-.container .ql-toolbar .download-button {
-  margin-left: auto;
-  /* Align download button to the right */
-  padding: 0.5rem;
-  background-color: #4CAF50;
-  /* Green background for download button */
+/* Style for the custom buttons */
+.ql-toolbar .ql-custom-pdf,
+.ql-toolbar .ql-custom-docx {
+  background-color: #007bff;
   color: white;
   border: none;
-  border-radius: 5px;
+  padding: 0.5rem 1rem;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
+  border-radius: 4px;
+  margin-left: 10px;
 }
 
+.ql-toolbar .ql-custom-pdf:hover,
+.ql-toolbar .ql-custom-docx:hover {
+  background-color: #0056b3;
+}
+
+.ql-toolbar .ql-custom-pdf:focus,
+.ql-toolbar .ql-custom-docx:focus {
+  outline: none;
+}
+
+/* PDF icon */
+.ql-toolbar .ql-custom-pdf::before {
+  content: "📄";
+  margin-right: 5px;
+}
+
+/* DOCX icon */
+.ql-toolbar .ql-custom-docx::before {
+  content: "📝";
+  margin-right: 5px;
+}
+
+/* Page styling for printing */
 @page {
   margin: 1in;
 }

@@ -1,7 +1,7 @@
 const mongoose = require("mongoose")
 const Document = require("./Document")
 
-mongoose.connect("mongodb+srv://pavankamthane:pavan@main.7mnfj.mongodb.net")
+mongoose.connect("mongodb://localhost/google-docs-clone")
 
 const io = require("socket.io")(3001, {
   cors: {
